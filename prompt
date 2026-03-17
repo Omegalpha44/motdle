@@ -1,6 +1,0 @@
-Bonjour Claude, voici mon projet. Sache qu'il est en fonctionnement actuellement. je voudrais que tu fasses les changements suivants pour moi s'il te plait : 
-1. Faire en sorte que le bot envoie un message tout les jours à 9h dans le salon qui lui est dédié, avec un bouton clickable nommé "pingez-moi". Le bouton est un toggle pour l'utilisateur. Si le toggle est activé, et que à 16h il n'a pas fait le motdle du jour, alors le bot lui envoie un message privé pour lui rappeler. 
-2. je veux aussi que lorsque la commande partage est faite, que ce soit quand une personne a complétée sa grille ou lors de son exécution manuelle, il y ait un bouton "jouer", pour que les personnes qui voient le message puissent à leur tour jouer le motdle du jour. 
-3. je voudrais rajouter un peu de sécurité sur la manière dont les résultats sont affichés à la fin de l'exécution. En effet, je voudrais que, de base, les choix de chaque joueur soit caché aux autres joueurs. Ils ne seront visible que s'il active l'option donc.
-4. aussi, je voudrais que /classement se fasse en deux temps, avec un bouton qui affiche ce que les autres joueurs ont joué (pour ceux qui ont le toggle de partage d'activité d'activé)
-5. je ne sais pas trop où mettre le toggle de partage d'activité de son activité, je pense que le mettre au même niveau que le toggle de ping serait une bonne idée.
