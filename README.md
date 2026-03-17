@@ -184,16 +184,9 @@ Tâches à heures fixes (fuseau horaire **Europe/Paris**) :
 - Vérifier que l'utilisateur a activé le toggle "Pingez-moi"
 - Vérifier que bot n'est pas bloqué (paramètres confidentialité Discord)
 
-### Ancien chemin du projet
-Si vous avez renommé le dossier depuis `/modeule de la hess/`, le venv peut pointer vers l'ancien chemin. Solution :
-```bash
-uv venv --clear
-uv sync
-```
-
 ## 📄 Licence
 
-Libre d'usage. Développé pour un Raspberry Pi en production.
+Libre d'usage. Développé pour une Rasberry pi 5 8go.
 
 ---
 
