@@ -36,7 +36,7 @@ Un bot Discord pour jouer au **Wordle en français** avec vos amis ! Chaque jour
 
 1. **Cloner/télécharger le projet**
    ```bash
-   cd /home/charl/Desktop/motdle
+   git clone https://github.com/Omegalpha44/motdle
    ```
 
 2. **Créer/reconstruire le virtualenv**
