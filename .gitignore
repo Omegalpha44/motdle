@@ -7,3 +7,4 @@ dist/
 emoji_ids.json
 emojis/
 motdle.db
+.pytest_cache/
