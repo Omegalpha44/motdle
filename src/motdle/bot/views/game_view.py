@@ -50,22 +50,12 @@ class GameView(discord.ui.View):
     async def leaderboard_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        import asyncio
-        from datetime import date
-
-        from motdle.core.database import has_finished_today
-
-        today = date.today()
-        user_id = interaction.user.id
+        from motdle.bot.views.classement_view import ClassementView
 
         await interaction.response.defer(ephemeral=True)
-
-        game_done = self.game.status != GameStatus.IN_PROGRESS
-        in_db = await asyncio.to_thread(has_finished_today, self.cog.db_path, user_id, today)
-        reveal = game_done or in_db
-
-        embed, file = await self.cog._build_comparison(interaction, reveal=reveal)
+        embed, file = await self.cog._build_comparison(interaction, reveal_details=False)
+        view = ClassementView(cog=self.cog)
         if file:
-            await interaction.followup.send(embed=embed, file=file)
+            await interaction.followup.send(embed=embed, file=file, view=view, ephemeral=True)
         else:
-            await interaction.followup.send(embed=embed)
+            await interaction.followup.send(embed=embed, view=view, ephemeral=True)

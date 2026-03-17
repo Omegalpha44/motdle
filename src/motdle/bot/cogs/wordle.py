@@ -8,9 +8,11 @@ from discord.ext import commands
 
 from motdle.bot.views.game_view import GameView
 from motdle.bot.views.image_renderer import render_daily_comparison, render_game
+from motdle.bot.views.play_button import PlayButtonView
 from motdle.core.database import (
     clear_old_results,
     get_player_today_result,
+    get_share_enabled_user_ids,
     get_today_results,
     has_finished_today,
     reset_db,
@@ -128,13 +130,28 @@ class WordleCog(commands.Cog):
     async def _build_comparison(
         self,
         interaction: discord.Interaction,
-        reveal: bool,
+        reveal_details: bool = False,
+        include_self: bool = True,
     ) -> tuple:
         """Construit l'embed de comparaison du jour avec les noms resolus via l'API."""
         today = date.today()
-        # On nettoie la BD des anciens jours avant de chercher les résultats du jour
         await asyncio.to_thread(clear_old_results, self.db_path, today)
         results = await asyncio.to_thread(get_today_results, self.db_path, today)
+
+        viewer_id = interaction.user.id
+        reveal_user_ids: set[int] = set()
+
+        if include_self:
+            viewer_finished = await asyncio.to_thread(
+                has_finished_today, self.db_path, viewer_id, today
+            )
+            if viewer_finished:
+                reveal_user_ids.add(viewer_id)
+
+        if reveal_details:
+            shared = await asyncio.to_thread(get_share_enabled_user_ids, self.db_path)
+            reveal_user_ids |= shared
+
         names: dict[int, str] = {}
         if interaction.guild:
             for row in results:
@@ -146,8 +163,8 @@ class WordleCog(commands.Cog):
                     except discord.NotFound:
                         pass
         return render_daily_comparison(
-            results, interaction.guild, interaction.user.id,
-            reveal=reveal, today=today, names=names,
+            results, interaction.guild, viewer_id,
+            reveal_user_ids=reveal_user_ids, today=today, names=names,
         )
 
     @app_commands.command(
@@ -165,13 +182,13 @@ class WordleCog(commands.Cog):
             return
 
         await interaction.response.defer(ephemeral=True)
-        today = date.today()
-        finished = await asyncio.to_thread(has_finished_today, self.db_path, interaction.user.id, today)
-        embed, file = await self._build_comparison(interaction, reveal=finished)
+        embed, file = await self._build_comparison(interaction, reveal_details=False)
+        from motdle.bot.views.classement_view import ClassementView
+        view = ClassementView(cog=self)
         if file:
-            await interaction.followup.send(embed=embed, file=file)
+            await interaction.followup.send(embed=embed, file=file, view=view, ephemeral=True)
         else:
-            await interaction.followup.send(embed=embed)
+            await interaction.followup.send(embed=embed, view=view, ephemeral=True)
 
     @app_commands.command(
         name="partage",
@@ -199,11 +216,12 @@ class WordleCog(commands.Cog):
             except Exception:
                 pass
 
-        embed, file = await self._build_comparison(interaction, reveal=False)   
+        embed, file = await self._build_comparison(interaction, reveal_details=False, include_self=False)
+        view = PlayButtonView()
         if file:
-            msg = await interaction.followup.send(embed=embed, file=file, wait=True)
+            msg = await interaction.followup.send(embed=embed, file=file, view=view, wait=True)
         else:
-            msg = await interaction.followup.send(embed=embed, wait=True)
+            msg = await interaction.followup.send(embed=embed, view=view, wait=True)
 
         try:
             self.last_share_messages[channel_id] = msg.id
@@ -219,6 +237,9 @@ class WordleCog(commands.Cog):
 
     @admin.command(name="reset", description="Remet à zéro tous les résultats (admin uniquement)")
     async def admin_reset(self, interaction: discord.Interaction):
+        if not (interaction.guild and interaction.user.guild_permissions.administrator):
+            await interaction.response.send_message("\u26d4 R\u00e9serv\u00e9 aux administrateurs.", ephemeral=True)
+            return
         count = await asyncio.to_thread(reset_db, self.db_path)
         self.games.clear()
         await interaction.response.send_message(
@@ -228,6 +249,9 @@ class WordleCog(commands.Cog):
 
     @admin.command(name="populate", description="Générer des joueurs fictifs pour tester l'affichage du classement")
     async def admin_populate(self, interaction: discord.Interaction):
+        if not (interaction.guild and interaction.user.guild_permissions.administrator):
+            await interaction.response.send_message("\u26d4 R\u00e9serv\u00e9 aux administrateurs.", ephemeral=True)
+            return
         import random
         from datetime import date
         from motdle.core.database import save_result
@@ -255,6 +279,48 @@ class WordleCog(commands.Cog):
 
         await asyncio.to_thread(_populate)
         await interaction.response.send_message("\u2705 20 resultats fictifs ont ete ajoutes pour aujourd'hui !", ephemeral=True)
+
+    @admin.command(name="daily", description="Forcer l'envoi du message quotidien dans le salon (admin uniquement)")
+    async def admin_daily(self, interaction: discord.Interaction):
+        if not (interaction.guild and interaction.user.guild_permissions.administrator):
+            await interaction.response.send_message("\u26d4 R\u00e9serv\u00e9 aux administrateurs.", ephemeral=True)
+            return
+        from motdle.bot.views.daily_view import DailyToggleView
+        from datetime import date
+
+        await interaction.response.defer(ephemeral=True)
+
+        channel_id = os.getenv("SALON")
+        if not channel_id:
+            await interaction.followup.send("Variable SALON non configurée.", ephemeral=True)
+            return
+
+        channel = self.bot.get_channel(int(channel_id))
+        if channel is None:
+            try:
+                channel = await self.bot.fetch_channel(int(channel_id))
+            except (discord.NotFound, discord.Forbidden):
+                await interaction.followup.send("Salon introuvable ou inaccessible.", ephemeral=True)
+                return
+
+        today_str = date.today().strftime("%d/%m/%Y")
+        embed = discord.Embed(
+            title=f"Motdle du {today_str}",
+            description=(
+                "Un nouveau mot vous attend !\n\n"
+                "Utilisez `/motdle` pour jouer.\n\n"
+                "**Pingez-moi** : recevez un rappel \u00e0 16h si vous n'avez pas encore jou\u00e9.\n"
+                "**Partage d'activit\u00e9** : autorisez les autres \u00e0 voir vos mots dans le classement."
+            ),
+            color=discord.Color.blurple(),
+        )
+        try:
+            await channel.send(embed=embed, view=DailyToggleView(self.db_path))
+        except discord.Forbidden:
+            await interaction.followup.send("Le bot n'a pas la permission d'envoyer des messages dans ce salon.", ephemeral=True)
+            return
+
+        await interaction.followup.send("\u2705 Message quotidien envoy\u00e9 !", ephemeral=True)
 
 
 async def setup(bot: commands.Bot):

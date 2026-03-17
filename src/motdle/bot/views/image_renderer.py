@@ -236,14 +236,13 @@ def render_daily_comparison(
     today_results: list[dict],
     guild: discord.Guild | None,
     viewer_id: int,
-    reveal: bool,
+    reveal_user_ids: set[int],
     today: date,
     names: dict[int, str] | None = None,
 ) -> tuple[discord.Embed, discord.File | None]:
     """Retourne l'embed de comparaison du jour.
 
-    reveal=False : tuiles colorees sans lettres (silhouette).
-    reveal=True  : tuiles avec lettres.
+    reveal_user_ids : ensemble des user_id dont les lettres sont visibles.
     """
     date_str = today.strftime("%d/%m/%Y")
 
@@ -355,7 +354,7 @@ def render_daily_comparison(
                         radius=MINI_CORNER,
                         fill=color,
                     )
-                    if reveal and gc < len(word):
+                    if uid in reveal_user_ids and gc < len(word):
                         _center_text(
                             draw,
                             tx + MINI_TILE / 2,
@@ -386,11 +385,11 @@ def render_daily_comparison(
     img.save(buf, format="PNG", optimize=True)
     buf.seek(0)
 
-    hint = "" if reveal else " \u00b7 Terminez votre partie pour voir les lettres !"
+    hint = ""
     embed = discord.Embed(
         title=f"\U0001f4ca Comparaison du {date_str}",
         description=f"{n} joueur{'s' if n != 1 else ''} aujourd'hui{hint}",
-        color=discord.Color.green() if reveal else discord.Color.blurple(),
+        color=discord.Color.blurple(),
     )
     embed.set_image(url="attachment://comparison.png")
     file = discord.File(buf, filename="comparison.png")
