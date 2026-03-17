@@ -248,7 +248,7 @@ def render_daily_comparison(
 
     if not today_results:
         embed = discord.Embed(
-            title=f"\U0001f4ca Comparaison du {date_str}",
+            title=f"\U0001f4ca Challenge du {date_str}",
             description="Personne n'a encore joué aujourd'hui !",
             color=discord.Color.blurple(),
         )
@@ -277,7 +277,7 @@ def render_daily_comparison(
     stat_font  = _font(13)
     mini_font  = _font(11)
 
-    _center_text(draw, img_w / 2, CMP_PADDING + title_h / 2, f"Comparaison du {date_str}", title_font)
+    _center_text(draw, img_w / 2, CMP_PADDING + title_h / 2, f"Challenge du {date_str}", title_font)
 
     card_start_y = CMP_PADDING + title_h + title_gap
 
@@ -387,7 +387,7 @@ def render_daily_comparison(
 
     hint = ""
     embed = discord.Embed(
-        title=f"\U0001f4ca Comparaison du {date_str}",
+        title=f"\U0001f4ca Challenge du {date_str}",
         description=f"{n} joueur{'s' if n != 1 else ''} aujourd'hui{hint}",
         color=discord.Color.blurple(),
     )
