@@ -184,10 +184,3 @@ Tâches à heures fixes (fuseau horaire **Europe/Paris**) :
 - Vérifier que l'utilisateur a activé le toggle "Pingez-moi"
 - Vérifier que bot n'est pas bloqué (paramètres confidentialité Discord)
 
-## 📄 Licence
-
-Libre d'usage. Développé pour une Rasberry pi 5 8go.
-
----
-
-**Amusez-vous bien ! 🎮**
